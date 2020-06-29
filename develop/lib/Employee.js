@@ -7,7 +7,7 @@ class Employee {
         this.role = role
     }
 
-    getID() {
+    getId() {
         return this.id;
     }
 
