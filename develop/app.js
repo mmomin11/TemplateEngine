@@ -9,9 +9,10 @@ const OUTPUT_DIR = path.resolve(__dirname, "output");
 const outputPath = path.join(OUTPUT_DIR, "team.html");
 
 const render = require("./lib/htmlRenderer");
-
+// create an empty array of members currently in the data
 const teamMembers = []
 
+// function for a new managers that will use inquirer to prompt a set of questions to fill data for manager. 
 function newManager() {
     inquirer.prompt([
         {
@@ -35,10 +36,96 @@ function newManager() {
             message: "What is your manager's office number?"
         }
     ]).then(function(answer) {
-        const manager = new Manager(answer.name, parseInt(answers.id), answer.email, parseInt(answer.officeNumber));
+        const manager = new Manager(answer.name, parseInt(answer.id), answer.email, parseInt(answer.officeNumber));
         teamMembers.push(manager);
+        addMember();
     })
 }
+
+// prompt for manager to direct to the correct set of questions when adding a new memeber. 
+function addMember () {
+    inquirer.prompt([
+        {
+            type: "list",
+            name: "type",
+            message:"which type of employee would you like to add?",
+            choices: [
+                "Engineer", 
+                "Intern", 
+                "N/A"
+            ]
+        }
+// function needs to route to correct set of questions based on "answer"
+    ]).then(function(answer) {
+        if(answer.type === "Engineer") {
+            createEngineer();
+        } else if (answer.type === "Intern") {
+            createIntern();
+        } else render(teamMembers);
+    })
+}
+
+// after the manager selects engineer in order to create a new memeber then prompt below messages. 
+function createEngineer() {
+    inquirer.prompt([
+        {
+            type: "input",
+            name: "name",
+            message: "what is your engineer's name?"
+        },
+        {
+            type: "input",
+            name: "id",
+            message: "what is your engineer's ID?"
+        },
+        {
+            type: "input",
+            name: "email",
+            message: "what is your engineer's email?"
+        },
+        {
+            type: "input",
+            name: "username",
+            message: "what is your engineer's Github username?"
+        }
+    ]).then(function(answer) {
+        const engineer = new Engineer(answer.name, parseInt(answer.id), answer.email, answer.username);
+        teamMembers.push(engineer);
+        addMember();
+    })
+}
+
+// create intern function and set of prompts. Similar to above. 
+function createIntern() {
+    inquirer.prompt([
+        {
+            type: "input",
+            name: "name",
+            message: "what is your Intern's name?"
+        },
+        {
+            type: "input",
+            name: "id",
+            message: "what is your Intern's ID?"
+        },
+        {
+            type: "input",
+            name: "email",
+            message: "what is your Intern's email?"
+        },
+        {
+            type: "input",
+            name: "school",
+            message: "what is your intern's school?"
+        }
+    ]).then(function(answer) {
+        const intern = new Intern(answer.name, parseInt(answer.id), answer.email, answer.school);
+        teamMembers.push(intern);
+        addMember();
+    })
+}
+
+newManager();
 // Write code to use inquirer to gather information about the development team members,
 // and to create objects for each team member (using the correct classes as blueprints!)
 
