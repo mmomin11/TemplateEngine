@@ -1,66 +1,93 @@
-const path = require("path");
 const fs = require("fs");
+const path = require("path");
+const util = require("util");
+
+
+const Manager = require("./Manager");
+const Engineer = require("./Engineer");
+const Intern = require("./Intern");
+
 
 const templatesDir = path.resolve(__dirname, "../templates");
 
-const render = employees => {
+const outputDir = path.resolve(__dirname, "../output/");
+
+
+const writeFile = util.promisify(fs.writeFile);
+const readFile = util.promisify(fs.readFile);
+
+
+
+async function render(employees) {
   const html = [];
 
-  html.push(employees
-    .filter(employee => employee.getRole() === "Manager")
-    .map(manager => renderManager(manager))
+  const [
+    managerTemplate,
+    internTemplate,
+    engineerTemplate,
+    mainTemplate
+  ] = await Promise.all([
+    readFile(path.resolve(templatesDir, "manager.html"), "utf8"),
+    readFile(path.resolve(templatesDir, "intern.html"), "utf8"),
+    readFile(path.resolve(templatesDir, "engineer.html"), "utf8"),
+    readFile(path.resolve(templatesDir, "main.html"), "utf8")
+  ]);
+
+
+  html.push(
+    employees
+      .filter(employee => employee instanceof Manager)
+      .map(employee => {
+        let template = managerTemplate;
+        for (const key in employee) {
+          template = replacePlaceholder(template, key, employee[key]);
+        }
+        return template;
+      })
+      .join("")
   );
-  html.push(employees
-    .filter(employee => employee.getRole() === "Engineer")
-    .map(engineer => renderEngineer(engineer))
+
+
+  html.push(
+    employees
+      .filter(employee => employee instanceof Engineer)
+      .map(employee => {
+        let template = engineerTemplate;
+        for (const key in employee) {
+          template = replacePlaceholder(template, key, employee[key]);
+        }
+        return template;
+      })
+      .join("")
   );
-  html.push(employees
-    .filter(employee => employee.getRole() === "Intern")
-    .map(intern => renderIntern(intern))
+
+
+  html.push(
+    employees
+      .filter(employee => employee instanceof Intern)
+      .map(employee => {
+        let template = internTemplate;
+        for (const key in employee) {
+          template = replacePlaceholder(template, key, employee[key]);
+        }
+        return template;
+      })
+      .join("")
   );
 
-  return renderMain(html.join(""));
 
-};
-
-const renderManager = manager => {
-  let template = fs.readFileSync(path.resolve(templatesDir, "manager.html"), "utf8");
-  template = replacePlaceholders(template, "name", manager.getName());
-  template = replacePlaceholders(template, "role", manager.getRole());
-  template = replacePlaceholders(template, "email", manager.getEmail());
-  template = replacePlaceholders(template, "id", manager.getId());
-  template = replacePlaceholders(template, "officeNumber", manager.getOfficeNumber());
-  return template;
-};
-
-const renderEngineer = engineer => {
-  let template = fs.readFileSync(path.resolve(templatesDir, "engineer.html"), "utf8");
-  template = replacePlaceholders(template, "name", engineer.getName());
-  template = replacePlaceholders(template, "role", engineer.getRole());
-  template = replacePlaceholders(template, "email", engineer.getEmail());
-  template = replacePlaceholders(template, "id", engineer.getId());
-  template = replacePlaceholders(template, "github", engineer.getGithub());
-  return template;
-};
-
-const renderIntern = intern => {
-  let template = fs.readFileSync(path.resolve(templatesDir, "intern.html"), "utf8");
-  template = replacePlaceholders(template, "name", intern.getName());
-  template = replacePlaceholders(template, "role", intern.getRole());
-  template = replacePlaceholders(template, "email", intern.getEmail());
-  template = replacePlaceholders(template, "id", intern.getId());
-  template = replacePlaceholders(template, "school", intern.getSchool());
-  return template;
-};
-
-const renderMain = html => {
-  const template = fs.readFileSync(path.resolve(templatesDir, "main.html"), "utf8");
-  return replacePlaceholders(template, "team", html);
-};
-
-const replacePlaceholders = (template, placeholder, value) => {
-  const pattern = new RegExp("{{ " + placeholder + " }}", "gm");
-  return template.replace(pattern, value);
-};
+  if (!fs.existsSync(outputDir)) { 
+    fs.mkdirSync(outputDir);
+  }
+  await writeFile(
+    path.resolve(outputDir, "index.html"),
+    replacePlaceholder(mainTemplate, "team", html.join(""))
+  );
+}
+function replacePlaceholder(template, target, value) {
+  const regex = new RegExp("{{ " + target + " }}", "gm");
+  const newTemplate = template.replace(regex, value);
+  return newTemplate;
+}
 
 module.exports = render;
