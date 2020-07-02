@@ -85,11 +85,11 @@ function createEngineer() {
         },
         {
             type: "input",
-            name: "username",
+            name: "GitHubUser",
             message: "what is your engineer's Github username?"
         }
     ]).then(function(answer) {
-        const engineer = new Engineer(answer.name, parseInt(answer.id), answer.email, answer.username);
+        const engineer = new Engineer(answer.name, parseInt(answer.id), answer.email, answer.GitHubUser);
         teamMembers.push(engineer);
         addMember();
     })
